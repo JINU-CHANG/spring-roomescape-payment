@@ -4,15 +4,12 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.stereotype.Component;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.web.client.ResponseErrorHandler;
 import roomescape.exception.customexception.RoomEscapeBusinessException;
 import roomescape.exception.customexception.ThirdPartyAPIException;
 import roomescape.exception.dto.ThirdPartyErrorResponse;
 
-@Component
-public class RestTemplateResponseExceptionHandler implements ResponseErrorHandler {
+public class RestClientResponseExceptionHandler implements ResponseErrorHandler {
 
     @Override
     public boolean hasError(ClientHttpResponse response) {
@@ -25,7 +22,7 @@ public class RestTemplateResponseExceptionHandler implements ResponseErrorHandle
     }
 
     @Override
-    public void handleError(ClientHttpResponse response) {
+    public void handleError(ClientHttpResponse response){
         try {
             if (response.getStatusCode().is4xxClientError()) {
                 throw new RoomEscapeBusinessException(getResponseBody(response).message());
@@ -45,8 +42,8 @@ public class RestTemplateResponseExceptionHandler implements ResponseErrorHandle
             return objectMapper
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                     .readValue(
-                    response.getBody(),
-                    ThirdPartyErrorResponse.class);
+                            response.getBody(),
+                            ThirdPartyErrorResponse.class);
         } catch (IOException exception) {
             throw new RuntimeException(exception);
         }

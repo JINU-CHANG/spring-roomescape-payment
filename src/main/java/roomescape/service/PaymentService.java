@@ -2,11 +2,12 @@ package roomescape.service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import roomescape.controller.HeaderGenerator;
 import roomescape.controller.PaymentApproveResponse;
 import roomescape.controller.dto.PaymentApproveRequest;
@@ -17,10 +18,10 @@ public class PaymentService {
 
     @Value("${payment.secret-key}")
     private String secretKey;
-    private final RestTemplate restTemplate;
+    private final RestClient restClient;
 
-    public PaymentService(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+    public PaymentService(RestClient restClient) {
+        this.restClient = restClient;
     }
 
     public PaymentApproveResponse pay(HeaderGenerator headerGenerator, PaymentApproveRequest paymentApproveRequest) {
@@ -28,16 +29,17 @@ public class PaymentService {
         headers.setBasicAuth(encodeSecretKey());
         HttpEntity<PaymentApproveRequest> httpEntity = new HttpEntity<>(paymentApproveRequest, headers);
 
-        return restTemplate.postForEntity(
-                PAYMENT_APPROVE_ENDPOINT,
-                httpEntity,
-                PaymentApproveResponse.class
-        ).getBody();
+        return restClient.post()
+                .uri(PAYMENT_APPROVE_ENDPOINT)
+                .headers(httpHeaders -> httpHeaders.addAll(httpEntity.getHeaders()))
+                .body(httpEntity.getBody())
+                .retrieve()
+                .body(PaymentApproveResponse.class);
     }
 
     private String encodeSecretKey() {
         return Base64.getEncoder()
-                .encodeToString((secretKey + ":")
+                .encodeToString((secretKey + ".")
                         .getBytes(StandardCharsets.UTF_8));
     }
 }
